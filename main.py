@@ -15,8 +15,8 @@ ftp_path = "test.data"
 ftp_user = "one"
 ftp_password = "1234"
 opcua_url = "opc.tcp://seneca-ii.fritz.box:4840/milo"
-opcua_file_node_id = ""
 download_folder = "download/"
+file_size = os.stat('test.data').st_size
 
 def function_duration_measurment(func):
     start_time = time.time()
@@ -35,11 +35,9 @@ def test_protcol(func,test_name,n=10):
         min_time = min(min_time,time)
         max_time = max(max_time,time)
     print(test_name)
-    print("Max Time: {}",max_time)
-    print("Min Time: {}",min_time)
-    print("Mean Time: {}",all_time / n)
-
-
+    print(f"Max Time: {max_time}")
+    print(f"Min Time: {min_time}")
+    print(f"Mean Time: {all_time / n}")
 
 
 def http_download():
@@ -47,13 +45,16 @@ def http_download():
     if response.ok :
         with open(download_folder + "http.data", 'wb') as fp:
             fp.write(response.content)
-            
+        if not (os.stat(download_folder + "http.data").st_size == file_size):
+            raise Exception("HTTP file was not complete")
 
 def ftp_download():
     ftp = ftplib.FTP(ftp_url,user=ftp_user,passwd=ftp_password)
     ftp.login(user=ftp_user,passwd=ftp_password)
     with open(download_folder + "ftp.data", 'wb') as fp:
         ftp.retrbinary("RETR test.data",fp.write)
+    if not (os.stat(download_folder + "ftp.data").st_size == file_size):
+        raise Exception("HTTP file was not complete")
         
 def opcua_download():
     asyncio.run(opcua_download_async())
@@ -71,7 +72,8 @@ async def opcua_download_async():
         async with UaFile(remote_file_node, OpenFileMode.Read.value) as remote_file:
             with open(download_folder + "opcua.data", 'wb') as fp:
                 fp.write(await remote_file.read(65535*63))
-        
+        if not (os.stat(download_folder + "opcua.data").st_size == file_size):
+            raise Exception("HTTP file was not complete")
     
 
 path = Path(download_folder)
@@ -79,6 +81,7 @@ path.mkdir(parents=True, exist_ok=True)
 for file in os.scandir(download_folder):
     os.remove(file.path)
 
+print("Test is running with a file size of: ", file_size)
 test_protcol(http_download,"HTTP Download Test",10)
 test_protcol(ftp_download,"FTP Download Test",10)
 test_protcol(opcua_download,"OPC UA Download Test",10)

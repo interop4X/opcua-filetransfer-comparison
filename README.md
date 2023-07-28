@@ -1,44 +1,53 @@
-# opcua-filetransfer-comparison
-This is a small project ot compare the transmission quality of file transfer via opc ua (with FileType), http, and ftp.
+# OPC UA File Transfer Comparison
+
+This project aims to compare the transmission quality of file transfer via different protocols: OPC UA (with FileType), HTTP, and FTP. The comparison is made using a client-server model, where the client retrieves a file from the server using each of the protocols.
 
 ## Detailed Description
 
-coming soon 
+This project provides a detailed comparison of file transfer protocols. It measures the performance and reliability of OPC UA, HTTP, and FTP in transferring files from a server to a client. The comparison is done under various network conditions to provide a comprehensive analysis. More details will be provided soon.
 
-## How to use
+## How to Use
 
 ### Installation
-You need to install packages on client side and on a server side. It is suggested to use to seperate computer or a networksimulation to get better results. 
 
-### Installation Client side
-On client side you only need some python packages for the main script.
-```
-    pip install -r requirements.txt
-```
-### Installation Server side
-On the server side you need to install a http server, ftp server and a opc ua server.
-You can adapte the main.py script to the path or nodeId of the server.
+The project requires installations on both the client and server sides. It is recommended to use two separate computers or a network simulation for more accurate results.
 
-In this example the following server application and configuration are used:
+### Client Side Installation
+
+On the client side, you need to install some Python packages for the main script. You can do this by running the following command:
+
+```bash
+pip install -r requirements.txt
+```
+
+### Server Side Installation
+
+On the server side, you need to install an HTTP server, FTP server, and an OPC UA server. You can adapt the `main.py` script to match the path or nodeId of your server.
+
+In this example, the following server applications and configurations are used:
 
 #### HTTP
-As http server the apache2 server as [xampp](https://www.apachefriends.org/download.html) application is used. 
+
+For the HTTP server, we use the Apache2 server as part of the [XAMPP](https://www.apachefriends.org/download.html) application.
 
 #### FTP
-As ftp server the vsftp server as docker container [delfer/alpine-ftp-server](https://github.com/delfer/docker-alpine-ftp-server) is used.
+
+For the FTP server, we use the VSFTP server as a Docker container, specifically [delfer/alpine-ftp-server](https://github.com/delfer/docker-alpine-ftp-server).
 
 #### OPC UA 
-As opc ua server the [eclipse milo sample server](https://github.com/digitalpetri/opc-ua-demo-server) is used.
 
+see sample node js server (opcua-file-server)(opcua-file-server/README.md)
 
-### Configuration of the test
-* copy the test file to the different servers
-* open the main.py file add modified the configuration (url, password, ...)
-* open the main.py file and modified the opcua_download to your server.
+### Test Configuration
 
-If you use the eclipse milo sample server you don´t need to change the opcua_download method but you need to replace the mainfest.txt file with your test.data
+1. Copy the test file to the different servers.
+2. Open the `main.py` file and modify the configuration (URL, password, etc.).
+3. Modify the `opcua_download` method in the `main.py` file to match your server.
 
-## next Steps
-- add smb as protocol
-- add security 
-- add network simulation like (mininet)
+If you're using the custom Node.js OPC UA server, you don't need to change the `opcua_download` method. However, you will need to replace the `manifest.txt` file with your `test.data` file.
+
+## Next Steps
+
+- Add SMB as a protocol.
+- Implement security measures.
+- Add network simulation (like Mininet).

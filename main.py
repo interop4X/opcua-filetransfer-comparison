@@ -1,3 +1,13 @@
+"""
+This script is licensed under the MIT License and is 
+copyrighted by Sebastian Friedl in 2023.
+
+The script is designed to download files from different protocols including HTTP,
+FTP, OPC UA, and SMB. It measures the time taken to download files of different sizes
+(1MB, 100MB, and 1GB) from each protocol and writes the results to a CSV file.
+"""
+
+# Importing necessary libraries
 import asyncio
 import os
 from pathlib import Path
@@ -13,30 +23,25 @@ import functools
 import csv
 import glob
 
-# general config
-download_folder = "download/"
+# Configuration parameters
+# Configuration parameters
+download_folder = "download/"  # The directory where the downloaded files are stored
+http_url = "http://your-http-server-url/webalizer/"  # The URL for HTTP downloads
+ftp_url =  "your-ftp-server-url"  # The URL for FTP downloads
+ftp_user = "your-ftp-username"  # The username for FTP downloads
+ftp_password = "your-ftp-password"  # The password for FTP downloads
+opcua_url = "opc.tcp://your-opcua-server-url:4840"  # The URL for OPC UA downloads
+smb_base_path = r'\\your-smb-server-ip\smb_volumen\\'  # The base path for SMB downloads
 
-#http config
-http_url = "http://seneca-ii.fritz.box/webalizer/"
-
-#ftp config
-ftp_url =  "seneca-ii.fritz.box"
-ftp_user = "one"
-ftp_password = "1234"
-
-#opc ua config
-opcua_url = "opc.tcp://seneca-ii.fritz.box:4840"
-
-#smb
-smb_base_path = r'\\192.168.178.23\smb_volumen\\'
-
+# Caching the hash of the test file
 @functools.lru_cache()
 def get_test_hash(test_file):
     return get_file_hash(test_file)
 
-def get_file_hash( file : str ):
+# Function to get the MD5 hash of a file
+def get_file_hash(file : str ):
     md5 = hashlib.md5()
-    BUF_SIZE = 65536  # lets read stuff in 64kb chunks!
+    BUF_SIZE = 65536  # Reading the file in 64kb chunks
     with open(file, 'rb') as f:
         while True:
             data = f.read(BUF_SIZE)
@@ -45,12 +50,14 @@ def get_file_hash( file : str ):
             md5.update(data)
     return "{0}".format(md5.hexdigest())
 
+# Function to measure the time taken by a function to execute
 def function_duration_measurment(func,file):
     start_time = time.time()
     func(file)
     end_time = time.time()
     return end_time - start_time
 
+# Function to test a protocol by downloading a file n times, measure the time taken, and print and write the results to a CSV file
 def test_protcol(func,test_name,file,n=10):
     max_time = 0
     min_time = 100000000
@@ -69,6 +76,7 @@ def test_protcol(func,test_name,file,n=10):
     print_result(test_name, max_time, min_time, all_time, count)
     write_to_result_csv(test_name, file, n, max_time, min_time, all_time, count)
 
+# Function to print the test results
 def print_result(test_name, max_time, min_time, all_time, count):
     print(test_name)
     print(f"Count: {count}")
@@ -76,7 +84,8 @@ def print_result(test_name, max_time, min_time, all_time, count):
     print(f"Min Time: {min_time}")
     print(f"Mean Time: {all_time / count}")
 
-def write_to_result_csv(test_name + file, n, max_time, min_time, all_time, count):
+# Function to write the test results to a CSV file
+def write_to_result_csv(test_name, file, n, max_time, min_time, all_time, count):
     with open('results.csv','a', newline='') as csvfile:
         writer = csv.writer(csvfile, delimiter=';')
         writer.writerow([test_name,file,"count",n])
@@ -84,20 +93,19 @@ def write_to_result_csv(test_name + file, n, max_time, min_time, all_time, count
         writer.writerow(["Max Time",max_time])
         writer.writerow(["Min Time",min_time])
         writer.writerow(["Mean Time",all_time / count])
-        
 
+# Function to download a file using HTTP and check its integrity
 def http_download(file):
     response = requests.post(http_url + file)
     if response.ok :
         with open(download_folder + "http.data", 'wb') as fp:
             fp.write(response.content)
-        #print("Download hash ",get_file_hash(download_folder + "http.data"))
         if not (get_file_hash(download_folder + "http.data") == get_test_hash(file)):
             raise Exception("HTTP file was not correct")
     else:
          raise Exception("HTTP file was not correct")
 
-
+# Function to download a file using FTP and check its integrity
 def ftp_download(file):
     ftp = ftplib.FTP(ftp_url,user=ftp_user,passwd=ftp_password)
     ftp.login(user=ftp_user,passwd=ftp_password)
@@ -105,10 +113,12 @@ def ftp_download(file):
         ftp.retrbinary("RETR {}".format(file),fp.write)
     if not (get_file_hash(download_folder + "ftp.data") == get_test_hash(file)):
         raise Exception("FTP file was not correct")
-        
+
+# Function to download a file using OPC UA and check its integrity
 def opcua_download(file):
     asyncio.run(opcua_download_async(file))
- 
+
+# Async function to download a file using OPC UA and check its integrity
 async def opcua_download_async(file):
     async with Client(url=opcua_url) as client:
         idx = 1 # not nice but help 
@@ -121,10 +131,10 @@ async def opcua_download_async(file):
                 size = await remote_file.get_size();
                 while (fp.tell() <size): 
                     fp.write(await remote_file.read())
-        print (get_file_hash(download_folder + "opcua.data"))
         if not (get_file_hash(download_folder + "opcua.data") == get_test_hash(file)):
             raise Exception("HTTP file was not correct")
 
+# Function to download a file using SMB and check its integrity
 def smb_download(file):
     with open(smb_base_path + file, 'rb') as reomte_file:
         with open(download_folder + "smb.data", 'wb') as local_file:
@@ -132,15 +142,17 @@ def smb_download(file):
     if not (get_file_hash(download_folder + "smb.data") == get_test_hash(file)):
         raise Exception("smb file was not correct")
 
+# Creating a directory for downloads if it doesn't exist
 path = Path(download_folder)
 path.mkdir(parents=True, exist_ok=True)
+
+# Removing any existing files in the download directory
 for file in os.scandir(download_folder):
     os.remove(file.path)
 
+# Running the tests for each file size and each protocol
 tests = ['test_1m.data','test_100m.data','test_1000m.data'] 
-#tests = ['test_100m.data'] 
 print("Test is running")
-#smb_download(tests[0])
 for test_file in tests:
     print (test_file, get_test_hash(test_file))
     test_protcol(http_download,"HTTP Download Test",test_file,3)
